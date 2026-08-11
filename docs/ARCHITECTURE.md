@@ -1,126 +1,240 @@
-# Architektura DevBeast MCP
+# Architektura
 
-## Cel
+Szczegółowy opis warstw kodu serwera DevBeast MCP, przepływów danych i punktów rozszerzenia.
 
-DevBeast MCP to lokalny serwer [Model Context Protocol](https://modelcontextprotocol.io/) napisany w .NET 9. Działa jako most między agentem AI (Cursor, Claude Desktop, Claude Code) a infrastrukturą deweloperską: bazami danych, logami, cache, kolejkami i procesami zespołowymi.
+## Cel systemu
 
-## Diagram
+DevBeast MCP to lokalny serwer [Model Context Protocol](https://modelcontextprotocol.io/) w .NET 9. Pełni rolę **kontrolowanej warstwy pośredniej** między agentem AI a infrastrukturą deweloperską — bez ujawniania agentowi bezpośredniego dostępu do shella, connection stringów w promptach czy nieograniczonego SQL.
+
+## Diagram komponentów
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    ORKIESTRATOR AI                          │
-│              (Cursor / Claude Desktop / Claude Code)        │
-└───────────────────────────┬─────────────────────────────────┘
-                            │  JSON-RPC 2.0 / stdio
-┌───────────────────────────▼─────────────────────────────────┐
-│                 DevBeast.Mcp.Server (.NET 9)                  │
-│                                                             │
-│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────┐  │
-│  │    Tools    │  │   Services   │  │  Infrastructure  │  │
-│  │  (MCP API)  │──│  (logika)    │──│  (DI, config)    │  │
-│  └─────────────┘  └──────────────┘  └──────────────────┘  │
-│         │                 │                                 │
-│         │          ┌──────┴──────┐                          │
-│         │          │   Models    │                          │
-│         │          │ (kontrakty) │                          │
-│         │          └─────────────┘                          │
-└─────────┼─────────────────┼─────────────────────────────────┘
-          │                 │
-          ▼                 ▼
-   [ MongoDB / SQL ]  [ Redis / Logi / Mocki Jira·ADO·PR ]
+┌──────────────────────────────────────────────────────────────────┐
+│                     ORKIESTRATOR AI                              │
+│           Cursor / Claude Desktop / Claude Code                  │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │  JSON-RPC 2.0 / stdio
+┌────────────────────────────▼─────────────────────────────────────┐
+│                   DevBeast.Mcp.Server                            │
+│                                                                  │
+│  ┌──────────────┐    ┌───────────────┐    ┌──────────────────┐  │
+│  │    Tools     │───►│   Services    │───►│  External I/O    │  │
+│  │  (8 klas)    │    │  (15+ serw.)  │    │  Mongo/SQL/Redis │  │
+│  │  16 narzędzi │    │               │    │  Files/Mocks     │  │
+│  └──────────────┘    └───────┬───────┘    └──────────────────┘  │
+│                            │                                     │
+│                    ┌───────▼────────┐                            │
+│                    │    Models      │                            │
+│                    │  (7 folderów)  │                            │
+│                    └────────────────┘                            │
+│                                                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────────┐  │
+│  │ Configuration│  │  Security    │  │  Infrastructure (DI)  │  │
+│  │ DevBeastOpts │  │ SqlValidator │  │  ServiceRegistration  │  │
+│  └──────────────┘  └──────────────┘  └───────────────────────┘  │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-## Warstwy
+## Warstwa Tools
 
-### 1. Tools (`src/DevBeast.Mcp.Server/Tools/`)
+Lokalizacja: `src/DevBeast.Mcp.Server/Tools/`
 
-Warstwa ekspozycji MCP. Każda klasa oznaczona `[McpServerToolType]` mapuje metody C# na narzędzia JSON-RPC widoczne dla agenta.
+Cienka warstwa ekspozycji MCP. Każda klasa ma atrybut `[McpServerToolType]`, metody — `[McpServerTool]`.
 
-| Klasa | Narzędzia |
-|-------|-----------|
-| `DatabaseTools` | `get_database_schema`, `execute_read_query` |
-| `DiagnosticsTools` | `get_recent_errors` |
-| `ArchitectureTools` | `validate_architecture_rules` |
-| `ProjectStructureTools` | `ensure_project_structure`, `get_project_structure` |
-| `ScaffoldingTools` | `scaffold_feature_slice` |
-| `IntegrationTools` | `get_ticket_context`, `create_pull_request_with_impact` |
-| `DataTools` | `generate_test_fixtures`, `diff_environments` |
-| `InfrastructureTools` | `inspect_redis_cache`, `flush_key`, `peek_dead_letter_queue` |
-| `SecurityTools` | `scan_secrets_and_pii`, `check_nuget_vulnerabilities` |
+| Klasa | Narzędzia | Deleguje do |
+|-------|-----------|-------------|
+| `DatabaseTools` | `get_database_schema`, `execute_read_query` | `IDatabaseService` |
+| `DiagnosticsTools` | `get_recent_errors` | `ILogService` |
+| `ArchitectureTools` | `validate_architecture_rules` | `IArchitectureValidationService` |
+| `ProjectStructureTools` | `ensure_project_structure`, `get_project_structure` | `IProjectStructureService` |
+| `ScaffoldingTools` | `scaffold_feature_slice` | `IFeatureSliceScaffolder` |
+| `IntegrationTools` | `get_ticket_context`, `create_pull_request_with_impact` | `ITicketService`, `IPullRequestService` |
+| `DataTools` | `generate_test_fixtures`, `diff_environments` | `IFixtureGeneratorService`, `IEnvironmentDiffService` |
+| `InfrastructureTools` | `inspect_redis_cache`, `flush_key`, `peek_dead_letter_queue` | `ICacheService`, `IDeadLetterQueueService` |
+| `SecurityTools` | `scan_secrets_and_pii`, `check_nuget_vulnerabilities` | `ISecretsScanner`, `INuGetVulnerabilityChecker` |
 
-Tools są cienkie — delegują do serwisów i serializują wynik do JSON.
+**Zasada:** Tools nie zawierają logiki biznesowej — tylko walidacja parametrów, wywołanie serwisu, serializacja JSON.
 
-### 2. Services (`src/DevBeast.Mcp.Server/Services/`)
+## Warstwa Services
 
-Logika biznesowa i integracje. Serwisy implementują interfejsy (`IDatabaseService`, `ITicketService`, …) i są rejestrowane w DI.
+Lokalizacja: `src/DevBeast.Mcp.Server/Services/`
 
-| Serwis | Odpowiedzialność |
-|--------|------------------|
-| `SqlServerDatabaseService` / `MongoDatabaseService` | Odczyt schematu i zapytań (read-only) |
-| `FileLogService` | Parsowanie logów Serilog/JSON |
-| `ArchitectureValidationService` | Reguły Clean Architecture / DDD |
-| `FeatureSliceScaffolder` | Generowanie Vertical Slice |
-| `MockTicketService` / `MockPullRequestService` | Mocki Jira, Azure DevOps, GitHub |
-| `FixtureGeneratorService` | Seed data (Bogus) ze schematu DB |
-| `EnvironmentDiffService` | Porównanie appsettings / schematu DB |
-| `RedisCacheService` | Redis + fallback mock |
-| `MockDeadLetterQueueService` | DLQ z MongoDB / hardcoded mock |
-| `SecretsScanner` | Wykrywanie secretów i PII |
-| `NuGetVulnerabilityChecker` | Audyt paczek NuGet (CVE) |
+| Serwis | Interfejs | Odpowiedzialność |
+|--------|-----------|------------------|
+| `SqlServerDatabaseService` | `IDatabaseService` | SQL: schema, SELECT |
+| `MongoDatabaseService` | `IDatabaseService` | Mongo: collections, find JSON |
+| `FileLogService` | `ILogService` | Parsowanie logów Serilog/JSON |
+| `ArchitectureValidationService` | `IArchitectureValidationService` | Reguły CA/DDD |
+| `ProjectStructureService` | `IProjectStructureService` | Skan/generacja struktury + manifest |
+| `FeatureSliceScaffolder` | `IFeatureSliceScaffolder` | Vertical slice (11 plików) |
+| `MockTicketService` | `ITicketService` | Tickety z JSON |
+| `MockPullRequestService` | `IPullRequestService` | Mock PR + impact |
+| `FixtureGeneratorService` | `IFixtureGeneratorService` | Bogus seed data |
+| `EnvironmentDiffService` | `IEnvironmentDiffService` | Diff appsettings/DB |
+| `RedisCacheService` | `ICacheService` | Redis + mock fallback |
+| `MockDeadLetterQueueService` | `IDeadLetterQueueService` | DLQ Mongo + mock |
+| `SecretsScanner` | `ISecretsScanner` | Regex scan secretów/PII |
+| `NuGetVulnerabilityChecker` | `INuGetVulnerabilityChecker` | CVE audit |
 
-Factory providera bazy: `Infrastructure/ServiceRegistration.cs` wybiera SQL lub Mongo na podstawie `DevBeast:Database:Provider`.
+### Factory providera bazy
 
-### 3. Models (`src/DevBeast.Mcp.Server/Models/`)
+`Infrastructure/ServiceRegistration.cs`:
 
-Kontrakty danych — jeden typ na plik, pogrupowane wg domeny:
+```csharp
+services.AddSingleton<IDatabaseService>(sp =>
+{
+    var options = sp.GetRequiredService<IOptions<DevBeastOptions>>().Value;
+    return options.Database.Provider.Equals("MongoDB", StringComparison.OrdinalIgnoreCase)
+        ? sp.GetRequiredService<MongoDatabaseService>()
+        : sp.GetRequiredService<SqlServerDatabaseService>();
+});
+```
+
+### Zależność scaffold → structure
+
+`FeatureSliceScaffolder` wywołuje `IProjectStructureService.EnsureStructureAsync()` przed generowaniem plików. Dzięki temu ścieżki warstw pochodzą z manifestu, nie z hardcoded template.
+
+## Warstwa Models
+
+Lokalizacja: `src/DevBeast.Mcp.Server/Models/`
+
+Jeden typ na plik, pogrupowany wg domeny:
 
 ```
 Models/
-├── Architecture/     ArchitectureViolation, ArchitectureValidationResult
-├── Database/         ColumnInfo, DatabaseSchemaResult, QueryResult, …
-├── Diagnostics/      AggregatedError
-├── Environments/     EnvironmentDiffEntry
-├── Infrastructure/   CacheEntry, DeadLetterMessage
-├── Integrations/     TicketContext, PullRequestImpact, PullRequestResult
-└── Security/         SecretFinding, NuGetVulnerability
+├── Architecture/
+│   ├── ArchitectureViolation.cs
+│   └── ArchitectureValidationResult.cs
+├── Database/
+│   ├── ColumnInfo.cs
+│   ├── DatabaseSchemaResult.cs
+│   ├── ForeignKeyInfo.cs
+│   ├── IndexInfo.cs
+│   └── QueryResult.cs
+├── Diagnostics/
+│   └── AggregatedError.cs
+├── Environments/
+│   └── EnvironmentDiffEntry.cs
+├── Infrastructure/
+│   ├── CacheEntry.cs
+│   └── DeadLetterMessage.cs
+├── Integrations/
+│   ├── PullRequestImpact.cs
+│   ├── PullRequestResult.cs
+│   └── TicketContext.cs
+├── Project/
+│   ├── ProjectLayerInfo.cs      (record w ProjectStructureResult.cs)
+│   └── ProjectStructureResult.cs
+└── Security/
+    ├── NuGetVulnerability.cs
+    └── SecretFinding.cs
 ```
 
-### 4. Configuration (`Configuration/DevBeastOptions.cs`)
+Wszystkie typy w namespace `DevBeast.Mcp.Server.Models` — brak konieczności zmiany importów w serwisach po reorganizacji folderów.
 
-Opcje wiązane z `appsettings.json`, `appsettings.Local.json` i zmiennymi `DEVBEAST_*`.
+## Konfiguracja
 
-### 5. Security (`Security/SqlQueryValidator.cs`)
+`Configuration/DevBeastOptions.cs` — wiązane z:
 
-Walidacja zapytań SQL — tylko SELECT/WITH, blokada INSERT/UPDATE/DELETE/DROP/ALTER.
+1. `appsettings.json` (domyślne)
+2. `appsettings.Local.json` (gitignored, lokalne override)
+3. Zmienne `DEVBEAST__*` (nadpisują pliki — używane w `mcp.json`)
 
-## Transport
+## Bezpieczeństwo
 
-Serwer komunikuje się po **stdio** (JSON-RPC 2.0). Logi idą na stderr, stdout jest zarezerwowany dla MCP.
+### SqlQueryValidator
+
+Lokalizacja: `Security/SqlQueryValidator.cs`
+
+- Dozwolone: `SELECT`, `WITH ... SELECT`
+- Zablokowane: `INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, `TRUNCATE`, `CREATE`, `EXEC`, `MERGE`
+- Walidacja słów kluczowych jako whole-word regex
+
+### SecretsScanner
+
+Skanuje pliki w projekcie — wynik zawiera `snippet` (obcięty), nigdy pełny secret.
+
+## Transport MCP
 
 ```csharp
 builder.Services
     .AddMcpServer()
     .WithStdioServerTransport()
     .WithTools<DatabaseTools>()
-    // …
+    // ... pozostałe Tools
 ```
 
-## Infrastruktura lokalna (Docker)
+- **stdout** — wyłącznie JSON-RPC MCP
+- **stderr** — logi serwera (`LogToStandardErrorThreshold = Trace`)
 
-| Usługa | Port | Rola |
-|--------|------|------|
-| MongoDB | `27018` | Przykładowa baza `devbeast` (products, orders, DLQ) |
-| Redis | `6379` | Cache (fallback mock gdy niedostępny) |
+## Manifest projektu
 
-> Port MongoDB: **27018** (nie 27017) — unika konfliktu z lokalnym `mongod`.
+`.devbeast/project-structure.json` w repo docelowym:
+
+- Commitowalny (nie gitignored)
+- Generowany/aktualizowany przez `ensure_project_structure`
+- Czytany przez `get_project_structure`, `FeatureSliceScaffolder`
+- Invalidacja: niekompletny manifest jest ignorowany → regeneracja
+
+## Struktura repozytorium DevBeast
+
+```
+DevBeast.Mcp/
+├── docker/
+│   ├── docker-compose.yml
+│   └── mongo-init/01-init-devbeast.js
+├── docs/                              ← dokumentacja
+├── samples/
+│   ├── ReferenceApp/                  ← demo + .devbeast/manifest
+│   └── Scaffolded/                    ← gitignored output
+├── src/DevBeast.Mcp.Server/
+│   ├── Configuration/
+│   ├── Infrastructure/ServiceRegistration.cs
+│   ├── Mocks/                         ← tickety, environments
+│   ├── Models/                        ← 7 subfolderów
+│   ├── Security/
+│   ├── Services/                      ← 15+ serwisów
+│   ├── Tools/                         ← 8 klas MCP
+│   ├── Program.cs
+│   └── appsettings.json
+└── tests/
+    ├── DevBeast.Mcp.Server.Tests/     ← 18 testów integracyjnych
+    └── DevBeast.Mcp.SmokeTest/        ← ręczny smoke test
+```
+
+## Rozszerzalność — dodanie nowego narzędzia
+
+1. **Model** — `Models/{Domena}/NowyResult.cs`
+2. **Serwis** — `Services/NowyService.cs` + interfejs `INowyService`
+3. **Rejestracja DI** — `Infrastructure/ServiceRegistration.cs`
+4. **Tool** — `Tools/NowyTools.cs` z `[McpServerTool]`
+5. **Program.cs** — `.WithTools<NowyTools>()`
+6. **Test** — `tests/.../McpToolsIntegrationTests.cs`
+7. **Dokumentacja** — `docs/TOOLS.md`
+
+### Podmiana mocka na prawdziwą integrację
+
+Implementuj ten sam interfejs:
+
+```csharp
+// Było:
+services.AddSingleton<ITicketService, MockTicketService>();
+
+// Będzie:
+services.AddSingleton<ITicketService, JiraTicketService>();
+```
+
+Tools i agent nie wymagają zmian — kontrakt JSON pozostaje ten sam.
 
 ## Testy
 
-| Projekt | Zakres |
-|---------|--------|
-| `tests/DevBeast.Mcp.Server.Tests` | 15 testów integracyjnych (DI + MCP stdio) |
-| `tests/DevBeast.Mcp.SmokeTest` | Ręczny smoke test wszystkich narzędzi |
+| Projekt | Testy | Zakres |
+|---------|-------|--------|
+| `DevBeast.Mcp.Server.Tests` | 18 | DI fixture + MCP stdio spawn |
+| `DevBeast.Mcp.SmokeTest` | — | Ręczne wywołanie 10 narzędzi |
 
-## Rozszerzalność
+## Powiązane dokumenty
 
-Nowe narzędzie = nowy serwis + klasa Tool + rejestracja w `ServiceRegistration` i `Program.cs`. Mocki można podmienić na prawdziwe integracje implementując ten sam interfejs (np. `ITicketService` → `JiraTicketService`).
+- [HOW_IT_WORKS.md](HOW_IT_WORKS.md) — flow agenta i scenariusze
+- [SETUP.md](SETUP.md) — instalacja
+- [TOOLS.md](TOOLS.md) — parametry narzędzi

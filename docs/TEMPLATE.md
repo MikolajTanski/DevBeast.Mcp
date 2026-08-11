@@ -1,39 +1,100 @@
-# DevBeast MCP — Template / Starter Kit
+# Template / Starter Kit
 
-> **Status:** Template referencyjny (Core/Full Edition) — baza pod przyszłe projekty MCP w ekosystemie .NET.
+> **Status:** Template referencyjny (Full Edition) — baza pod własne serwery MCP w ekosystemie .NET.
 
 ## Czym jest ten projekt?
 
-DevBeast MCP to **gotowy szablon lokalnego serwera MCP** dla agentów AI. Nie jest jeszcze produkcyjną integracją z Jirą, Azure DevOps ani GitHubem — te moduły działają w trybie **Mock**, aby można było od razu testować flow agenta bez konfiguracji zewnętrznych systemów.
+DevBeast MCP to **gotowy szablon lokalnego serwera MCP** — nie produkcyjna integracja z Jirą, Azure DevOps ani GitHubem. Moduły zespołowe działają w trybie **Mock**, żeby od razu testować flow agenta bez konfiguracji zewnętrznych systemów.
 
-Projekt powstał jako odpowiedź na pytanie:
+## Dla kogo?
 
-> *„Jak dać AI bezpieczny, kontrolowany dostęp do bazy, logów i procesów deweloperskich w .NET?”*
+- **.NET developerzy** integrujący AI z codzienną pracą
+- **Zespoły** budujące własne serwery MCP na bazie sprawdzonego wzorca
+- **Eksperymenty** z agentami w Cursor bez ręcznego kopiowania schematu DB i logów
 
-## Co robi dziś (out of the box)
+## Co dostajesz out of the box
 
-| Obszar | Działanie |
-|--------|-----------|
-| **Baza danych** | Odczyt schematu i SELECT (SQL Server) lub find (MongoDB) |
-| **Logi** | Agregacja ostatnich błędów z plików Serilog/JSON |
-| **Architektura** | Walidacja Clean Architecture / DDD w kodzie C# |
-| **Scaffolding** | Generowanie Vertical Slice (Entity, CQRS, Controller, testy) |
-| **Integracje** | Mock tickety (Jira/ADO) i mock PR z analizą ryzyka |
-| **Dane testowe** | Generowanie fixture'ów C# (Bogus) ze schematu DB |
-| **Środowiska** | Diff appsettings Dev/Test/Prod |
-| **Infrastruktura** | Redis cache inspect/flush, peek DLQ |
-| **Security** | Skan secretów/PII, audyt CVE w NuGet |
+| Obszar | Narzędzia MCP |
+|--------|---------------|
+| Baza danych | `get_database_schema`, `execute_read_query` |
+| Logi | `get_recent_errors` |
+| Architektura | `ensure_project_structure`, `validate_architecture_rules` |
+| Scaffolding | `scaffold_feature_slice` |
+| Integracje (mock) | `get_ticket_context`, `create_pull_request_with_impact` |
+| Dane testowe | `generate_test_fixtures`, `diff_environments` |
+| Infrastruktura | `inspect_redis_cache`, `flush_key`, `peek_dead_letter_queue` |
+| Security | `scan_secrets_and_pii`, `check_nuget_vulnerabilities` |
 
-## Co to jest „template na kiedyś”
+Szczegóły → [TOOLS.md](TOOLS.md)
 
-Ten repozytorium jest **punktem startowym**, nie finalnym produktem. Przeznaczone jest do:
+## Jak użyć jako template
 
-1. **Klonowania** jako baza pod nowy serwer MCP dla konkretnej aplikacji / zespołu
-2. **Podmiany mocków** na prawdziwe integracje (Jira REST, Azure DevOps API, GitHub CLI)
-3. **Rozszerzenia** o kolejne narzędzia specyficzne dla danej domeny biznesowej
-4. **Podłączenia** pod Cursor / Claude Desktop przez `mcp.json`
+### 1. Sklonuj i dostosuj
 
-### Roadmap (planowane rozszerzenia)
+```bash
+git clone https://github.com/MikolajTanski/DevBeast.Mcp.git moj-projekt-mcp
+cd moj-projekt-mcp
+```
+
+### 2. Postaw środowisko
+
+Pełna instrukcja → [SETUP.md](SETUP.md)
+
+```bash
+cd docker && docker compose up -d
+cp src/DevBeast.Mcp.Server/appsettings.Local.json.example \
+   src/DevBeast.Mcp.Server/appsettings.Local.json
+```
+
+### 3. Podłącz pod swoją aplikację
+
+W `.cursor/mcp.json` **projektu docelowego**:
+
+```json
+{
+  "mcpServers": {
+    "devbeast": {
+      "command": "dotnet",
+      "args": ["run", "--project", "/path/to/DevBeast.Mcp.Server.csproj"],
+      "env": {
+        "DEVBEAST__DefaultProjectPath": "/path/to/MOJA.APLIKACJA",
+        "DEVBEAST__Mongo__ConnectionString": "...",
+        "DEVBEAST__Logs__Directory": "/path/to/logs"
+      }
+    }
+  }
+}
+```
+
+### 4. Wygeneruj strukturę w swoim projekcie
+
+W chacie Cursor:
+
+```
+ensure_project_structure projectPath=/path/to/MOJA.APLIKACJA namespacePrefix=MojaApp
+```
+
+### 5. Dostosuj mocki
+
+Edytuj pliki w `src/DevBeast.Mcp.Server/Mocks/`:
+
+- `tickets/` — tickety Jira/ADO przypominające te z Twojego zespołu
+- `environments/` — appsettings Dev/Test/Prod Twojej aplikacji
+
+### 6. Zamień mocki na prawdziwe integracje
+
+Gdy będziesz gotowy — implementuj interfejsy:
+
+| Interfejs | Mock | Docelowa implementacja |
+|-----------|------|------------------------|
+| `ITicketService` | `MockTicketService` | `JiraTicketService` |
+| `IPullRequestService` | `MockPullRequestService` | `GitHubPullRequestService` |
+| `ILogService` | `FileLogService` | `ElkLogService` |
+| `IDeadLetterQueueService` | `MockDeadLetterQueueService` | `ServiceBusDlqService` |
+
+Rejestracja w `Infrastructure/ServiceRegistration.cs` — Tools i agent bez zmian.
+
+## Roadmap
 
 - [ ] Prawdziwa integracja Jira / Azure DevOps / GitHub
 - [ ] Provider ELK / Elasticsearch dla logów
@@ -41,50 +102,15 @@ Ten repozytorium jest **punktem startowym**, nie finalnym produktem. Przeznaczon
 - [ ] HTTP transport (Streamable HTTP) obok stdio
 - [ ] Pakiet NuGet do dystrybucji serwera
 
-## Jak użyć jako template
+## Dokumentacja
 
-```bash
-# 1. Sklonuj
-git clone git@github.com:MikolajTanski/DevBeast.Mcp.git moj-projekt-mcp
-cd moj-projekt-mcp
-
-# 2. Uruchom infrastrukturę
-cd docker && docker compose up -d
-
-# 3. Skonfiguruj
-cp src/DevBeast.Mcp.Server/appsettings.Local.json.example \
-   src/DevBeast.Mcp.Server/appsettings.Local.json
-# → ustaw connection string, ścieżki logów, DefaultProjectPath
-
-# 4. Podłącz w Cursor (~/.cursor/mcp.json lub .cursor/mcp.json)
-# 5. Dostosuj mocki w src/DevBeast.Mcp.Server/Mocks/
-# 6. Zamień Mock*Service na prawdziwe implementacje gdy będziesz gotowy
-```
-
-## Struktura kluczowych folderów
-
-```
-DevBeast.Mcp/
-├── docs/
-│   ├── ARCHITECTURE.md    ← szczegółowa architektura
-│   └── TEMPLATE.md        ← ten plik
-├── docker/                ← MongoDB (:27018) + Redis
-├── samples/
-│   └── ReferenceApp/      ← przykładowa app z naruszeniami architektury (do testów)
-├── src/DevBeast.Mcp.Server/
-│   ├── Tools/             ← warstwa MCP (API dla agenta)
-│   ├── Services/          ← logika biznesowa
-│   ├── Models/            ← kontrakty (1 typ = 1 plik, pogrupowane wg domeny)
-│   ├── Mocks/             ← dane testowe (tickety, environments)
-│   └── Configuration/     ← DevBeastOptions
-└── tests/                 ← testy integracyjne + smoke test
-```
-
-## Dla kogo?
-
-- **.NET developerzy** integrujący AI z codzienną pracą
-- **Zespoły** budujące własne serwery MCP na bazie sprawdzonego wzorca
-- **Eksperymenty** z agentami w Cursor / Claude bez ręcznego kopiowania schematu DB i logów
+| Dokument | Kiedy czytać |
+|----------|--------------|
+| [README.md](../README.md) | Start — linki do wszystkiego |
+| [HOW_IT_WORKS.md](HOW_IT_WORKS.md) | Jak agent korzysta z narzędzi |
+| [SETUP.md](SETUP.md) | Instalacja krok po kroku |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Warstwy kodu, rozszerzalność |
+| [TOOLS.md](TOOLS.md) | Referencja 16 narzędzi |
 
 ## Autor
 
@@ -92,4 +118,4 @@ Mikołaj Tański — .NET Developer / AI Integration Engineer
 
 ## Licencja
 
-Użyj swobodnie jako template w projektach wewnętrznych. Dostosuj mocki i konfigurację do własnych potrzeb.
+Użyj swobodnie jako template w projektach wewnętrznych.
