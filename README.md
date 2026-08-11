@@ -9,6 +9,7 @@ Lokalny serwer MCP w .NET 9, który daje agentom AI (Cursor, Claude Desktop, Cla
 | Dokument | Opis |
 |----------|------|
 | [Jak to działa](docs/HOW_IT_WORKS.md) | Flow agenta, transport MCP, manifest projektu, typowe scenariusze |
+| [Agent workflows](docs/AGENT_WORKFLOWS.md) | **20 gotowych promptów** — bugfix, feature, on-call, security audit |
 | [Instalacja i konfiguracja](docs/SETUP.md) | Docker, appsettings, Cursor MCP, zmienne env, troubleshooting |
 | [Architektura](docs/ARCHITECTURE.md) | Warstwy serwera, modele, serwisy, rozszerzalność |
 | [Narzędzia MCP (16)](docs/TOOLS.md) | Pełna referencja: parametry, przykłady, ograniczenia |

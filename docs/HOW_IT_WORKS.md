@@ -156,8 +156,15 @@ Przy **debugowaniu runtime**:
 get_recent_errors → peek_dead_letter_queue → inspect_redis_cache
 ```
 
+## Gotowe prompty (copy-paste)
+
+Pełna lista **20 scenariuszy** z promptami do wklejenia w Cursor Agent → [AGENT_WORKFLOWS.md](AGENT_WORKFLOWS.md).
+
+Przykłady: bugfix z Jiry, vertical slice z ADO, diagnostyka incydentu, security audit, on-call runbook.
+
 ## Dalsze reading
 
+- [AGENT_WORKFLOWS.md](AGENT_WORKFLOWS.md) — gotowe prompty pod scenariusze
 - [SETUP.md](SETUP.md) — instalacja krok po kroku
 - [ARCHITECTURE.md](ARCHITECTURE.md) — warstwy kodu serwera
 - [TOOLS.md](TOOLS.md) — pełna referencja parametrów
