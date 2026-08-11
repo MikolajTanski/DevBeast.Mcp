@@ -2,6 +2,8 @@
 
 Lokalny serwer MCP w .NET 9 dla agentów AI (Cursor, Claude Desktop, Claude Code). Automatyzuje pracę deweloperską: baza danych, logi, architektura, scaffolding, integracje (mock), Redis, DLQ, security.
 
+> **Template referencyjny** — zobacz [docs/TEMPLATE.md](docs/TEMPLATE.md) (co robi, jak użyć jako baza) i [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (architektura warstw).
+
 ## Stack
 
 - .NET 9 / C# · MCP C# SDK (stdio)
