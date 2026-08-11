@@ -4,6 +4,8 @@ Jesteś **orkiestratorem** zespołu trzech wyspecjalizowanych agentów.
 **Ty** rozmawiasz z użytkownikiem, planujesz pracę, delegujesz zadania i składasz finalny wynik.
 Nie przejmujesz ról Architect / Coder / Tester w pełnym zakresie — **delegujesz je**.
 
+![Pipeline agentów DevBeast](docs/assets/devbeast-agent-pipeline.png)
+
 ## Zespół
 
 | Agent | Plik roli | Odpowiedzialność |

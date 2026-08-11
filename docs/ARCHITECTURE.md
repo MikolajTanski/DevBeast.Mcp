@@ -8,31 +8,38 @@ DevBeast MCP to lokalny serwer [Model Context Protocol](https://modelcontextprot
 
 ## Diagram komponentów
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                     ORKIESTRATOR AI                              │
-│           Cursor / Claude Desktop / Claude Code                  │
-└────────────────────────────┬─────────────────────────────────────┘
-                             │  JSON-RPC 2.0 / stdio
-┌────────────────────────────▼─────────────────────────────────────┐
-│                   DevBeast.Mcp.Server                            │
-│                                                                  │
-│  ┌──────────────┐    ┌───────────────┐    ┌──────────────────┐  │
-│  │    Tools     │───►│   Services    │───►│  External I/O    │  │
-│  │  (8 klas)    │    │  (15+ serw.)  │    │  Mongo/SQL/Redis │  │
-│  │  16 narzędzi │    │               │    │  Files/Mocks     │  │
-│  └──────────────┘    └───────┬───────┘    └──────────────────┘  │
-│                            │                                     │
-│                    ┌───────▼────────┐                            │
-│                    │    Models      │                            │
-│                    │  (7 folderów)  │                            │
-│                    └────────────────┘                            │
-│                                                                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────────┐  │
-│  │ Configuration│  │  Security    │  │  Infrastructure (DI)  │  │
-│  │ DevBeastOpts │  │ SqlValidator │  │  ServiceRegistration  │  │
-│  └──────────────┘  └──────────────┘  └───────────────────────┘  │
-└──────────────────────────────────────────────────────────────────┘
+![DevBeast MCP — architektura serwera](assets/devbeast-architecture.png)
+
+```mermaid
+flowchart TB
+    subgraph clients["Orkiestrator AI"]
+        Cursor[Cursor / Claude Desktop / Claude Code]
+    end
+
+    subgraph server["DevBeast.Mcp.Server"]
+        Tools[Tools — 10 klas, 17 narzędzi]
+        Services[Services — 15+ serwisów]
+        Models[Models — 7 folderów]
+        Config[Configuration]
+        Sec[Security — SqlValidator]
+        DI[Infrastructure — DI]
+        Tools --> Services --> Models
+    end
+
+    subgraph io["External I/O"]
+        Mongo[(MongoDB :27018)]
+        SQL[(SQL Server)]
+        Redis[(Redis :6379)]
+        Files[Pliki repo / logi]
+        Mocks[Mocki Jira / ADO / PR]
+    end
+
+    Cursor <-->|JSON-RPC stdio| Tools
+    Services --> Mongo
+    Services --> SQL
+    Services --> Redis
+    Services --> Files
+    Services --> Mocks
 ```
 
 ## Warstwa Tools
@@ -52,6 +59,7 @@ Cienka warstwa ekspozycji MCP. Każda klasa ma atrybut `[McpServerToolType]`, me
 | `DataTools` | `generate_test_fixtures`, `diff_environments` | `IFixtureGeneratorService`, `IEnvironmentDiffService` |
 | `InfrastructureTools` | `inspect_redis_cache`, `flush_key`, `peek_dead_letter_queue` | `ICacheService`, `IDeadLetterQueueService` |
 | `SecurityTools` | `scan_secrets_and_pii`, `check_nuget_vulnerabilities` | `ISecretsScanner`, `INuGetVulnerabilityChecker` |
+| `MetricsTools` | `get_tool_call_stats` | `IToolCallMetrics` |
 
 **Zasada:** Tools nie zawierają logiki biznesowej — tylko walidacja parametrów, wywołanie serwisu, serializacja JSON.
 
@@ -75,6 +83,7 @@ Lokalizacja: `src/DevBeast.Mcp.Server/Services/`
 | `MockDeadLetterQueueService` | `IDeadLetterQueueService` | DLQ Mongo + mock |
 | `SecretsScanner` | `ISecretsScanner` | Regex scan secretów/PII |
 | `NuGetVulnerabilityChecker` | `INuGetVulnerabilityChecker` | CVE audit |
+| `ToolCallMetrics` | `IToolCallMetrics` | Licznik wywołań MCP (in-memory) |
 
 ### Factory providera bazy
 
@@ -207,11 +216,11 @@ DevBeast.Mcp/
 │   ├── Models/                        ← 7 subfolderów
 │   ├── Security/
 │   ├── Services/                      ← 15+ serwisów
-│   ├── Tools/                         ← 8 klas MCP
+│   ├── Tools/                         ← 10 klas MCP
 │   ├── Program.cs
 │   └── appsettings.json
 └── tests/
-    ├── DevBeast.Mcp.Server.Tests/     ← 18 testów integracyjnych
+    ├── DevBeast.Mcp.Server.Tests/     ← 19 testów integracyjnych
     └── DevBeast.Mcp.SmokeTest/        ← ręczny smoke test
 ```
 
@@ -243,7 +252,7 @@ Tools i agent nie wymagają zmian — kontrakt JSON pozostaje ten sam.
 
 | Projekt | Testy | Zakres |
 |---------|-------|--------|
-| `DevBeast.Mcp.Server.Tests` | 18 | DI fixture + MCP stdio spawn |
+| `DevBeast.Mcp.Server.Tests` | 19 | DI fixture + MCP stdio spawn |
 | `DevBeast.Mcp.SmokeTest` | — | Ręczne wywołanie 10 narzędzi |
 
 ## Powiązane dokumenty

@@ -2,22 +2,30 @@
 
 Ten dokument opisuje **mechanikę DevBeast MCP** — co się dzieje od momentu wpisania polecenia w chacie Cursor, aż po odpowiedź agenta z realnymi danymi z bazy, logów lub repo.
 
+![DevBeast MCP — architektura](assets/devbeast-architecture.png)
+
 ## Ogólny flow
 
-```
-┌──────────────┐    JSON-RPC / stdio     ┌─────────────────────┐
-│  Cursor AI   │ ◄──────────────────────►│ DevBeast.Mcp.Server │
-│  (agent)     │   tools/list, tools/call│      (.NET 9)       │
-└──────────────┘                         └──────────┬──────────┘
-                                                    │
-                    ┌───────────────────────────────┼───────────────────────────────┐
-                    ▼                               ▼                               ▼
-              MongoDB :27018                    Redis :6379                    Pliki repo
-              MS SQL (opcja)                    Logi Serilog                   Mocki Jira/ADO
+```mermaid
+sequenceDiagram
+    participant U as Użytkownik
+    participant C as Cursor Agent
+    participant M as DevBeast MCP
+    participant I as Infra (DB / Redis / pliki)
+
+    U->>C: Prompt (np. bugfix, scaffold)
+    C->>M: tools/list
+    M-->>C: 17 narzędzi MCP
+    C->>M: tools/call (np. get_ticket_context)
+    M->>I: odczyt danych
+    I-->>M: wynik
+    M-->>C: JSON
+    C->>C: edycja kodu / raport
+    C-->>U: odpowiedź
 ```
 
 1. **Cursor** uruchamia proces `dotnet run --project DevBeast.Mcp.Server` jako serwer MCP (konfiguracja w `mcp.json`).
-2. Agent widzi **16 narzędzi** (np. `get_database_schema`, `ensure_project_structure`).
+2. Agent widzi **17 narzędzi** (np. `get_database_schema`, `ensure_project_structure`, `get_tool_call_stats`).
 3. Gdy potrzebuje danych, wywołuje narzędzie — serwer wykonuje logikę i zwraca **JSON**.
 4. Agent na podstawie JSON generuje kod, migracje, poprawki lub raport.
 
@@ -50,6 +58,8 @@ Przykład manifestu (`samples/ReferenceApp/.devbeast/project-structure.json`):
 ```
 
 ## Typowe scenariusze
+
+![Scenariusz bugfix — flow agenta](assets/devbeast-agent-flow.png)
 
 ### Scenariusz 1: Bug z Jiry → fix w kodzie
 
@@ -138,22 +148,21 @@ Przełączany w konfiguracji (`DevBeast:Database:Provider`):
 
 ## Kolejność narzędzi (best practice)
 
-Przy pracy nad **nowym projektem**:
-
-```
-ensure_project_structure → scaffold_feature_slice → validate_architecture_rules
-```
-
-Przy **bugfixie z ticketa**:
-
-```
-get_ticket_context → ensure_project_structure → [agent fixuje kod] → create_pull_request_with_impact
-```
-
-Przy **debugowaniu runtime**:
-
-```
-get_recent_errors → peek_dead_letter_queue → inspect_redis_cache
+```mermaid
+flowchart TD
+    subgraph nowy["Nowy projekt"]
+        A1[ensure_project_structure] --> A2[scaffold_feature_slice]
+        A2 --> A3[validate_architecture_rules]
+    end
+    subgraph bug["Bugfix z ticketa"]
+        B1[get_ticket_context] --> B2[ensure_project_structure]
+        B2 --> B3[agent fixuje kod]
+        B3 --> B4[create_pull_request_with_impact]
+    end
+    subgraph debug["Debug runtime"]
+        D1[get_recent_errors] --> D2[peek_dead_letter_queue]
+        D2 --> D3[inspect_redis_cache]
+    end
 ```
 
 ## Gotowe prompty (copy-paste)

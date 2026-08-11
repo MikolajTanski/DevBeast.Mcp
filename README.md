@@ -4,7 +4,11 @@ Lokalny serwer MCP w .NET 9, który daje agentom AI (Cursor, Claude Desktop, Cla
 
 **Repozytorium:** https://github.com/MikolajTanski/DevBeast.Mcp
 
+![DevBeast MCP — architektura](docs/assets/devbeast-architecture.png)
+
 ## Dokumentacja
+
+Pełny hub z grafikami → **[docs/README.md](docs/README.md)**
 
 | Dokument | Opis |
 |----------|------|
@@ -13,10 +17,12 @@ Lokalny serwer MCP w .NET 9, który daje agentom AI (Cursor, Claude Desktop, Cla
 | [Zespół agentów](AGENTS.md) | Orkiestrator + Architect / Coder / Tester (`.agents/`) |
 | [Instalacja i konfiguracja](docs/SETUP.md) | Docker, appsettings, Cursor MCP, zmienne env, troubleshooting |
 | [Architektura](docs/ARCHITECTURE.md) | Warstwy serwera, modele, serwisy, rozszerzalność |
-| [Narzędzia MCP (16)](docs/TOOLS.md) | Pełna referencja: parametry, przykłady, ograniczenia |
+| [Narzędzia MCP (17)](docs/TOOLS.md) | Pełna referencja: parametry, przykłady, ograniczenia |
 | [Template / starter kit](docs/TEMPLATE.md) | Jak użyć repo jako bazy pod własny serwer MCP |
 
 ## Szybki start (3 kroki)
+
+![Instalacja w 5 krokach](docs/assets/devbeast-setup.png)
 
 ```bash
 # 1. Infrastruktura

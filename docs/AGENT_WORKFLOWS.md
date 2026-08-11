@@ -2,8 +2,10 @@
 
 Ten dokument zawiera **copy-paste prompty** do Cursor Agent (lub Claude Code) z serwerem DevBeast MCP. Każdy prompt opisuje oczekiwany flow narzędzi — agent sam je wywoła, jeśli MCP jest podpięty.
 
+![Przykładowy flow agenta — bugfix](assets/devbeast-agent-flow.png)
+
 > **Wymagania:** Docker (Mongo + Redis), zbudowany serwer MCP, zielony status `devbeast` w **Settings → MCP**.  
-> Szczegóły → [SETUP.md](SETUP.md).
+> Szczegóły → [SETUP.md](SETUP.md) · hub docs → [README.md](README.md)
 
 ## Jak używać
 

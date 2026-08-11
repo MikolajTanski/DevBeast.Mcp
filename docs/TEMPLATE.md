@@ -14,11 +14,14 @@ DevBeast MCP to **gotowy szablon lokalnego serwera MCP** — nie produkcyjna int
 
 ## Co dostajesz out of the box
 
+![17 narzędzi MCP w 7 modułach](assets/devbeast-tools-map.png)
+
 | Obszar | Narzędzia MCP |
 |--------|---------------|
 | Baza danych | `get_database_schema`, `execute_read_query` |
 | Logi | `get_recent_errors` |
-| Architektura | `ensure_project_structure`, `validate_architecture_rules` |
+| Metryki | `get_tool_call_stats` |
+| Architektura | `ensure_project_structure`, `get_project_structure`, `validate_architecture_rules` |
 | Scaffolding | `scaffold_feature_slice` |
 | Integracje (mock) | `get_ticket_context`, `create_pull_request_with_impact` |
 | Dane testowe | `generate_test_fixtures`, `diff_environments` |

@@ -2,6 +2,8 @@
 
 DevBeast wystawia **17 narzędzi** pogrupowanych w 7 modułów. Wszystkie zwracają JSON.
 
+![Mapa 17 narzędzi MCP](assets/devbeast-tools-map.png)
+
 ## Spis
 
 - [Baza danych i diagnostyka](#baza-danych-i-diagnostyka)

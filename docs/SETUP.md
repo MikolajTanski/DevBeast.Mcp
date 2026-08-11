@@ -2,6 +2,8 @@
 
 Przewodnik krok po kroku: od sklonowania repo do działającego serwera MCP w Cursor.
 
+![DevBeast — szybka instalacja](assets/devbeast-setup.png)
+
 ## Wymagania
 
 | Wymaganie | Wersja | Uwagi |
@@ -190,14 +192,25 @@ Ten sam binarny serwer DevBeast, inna konfiguracja `env`.
 
 ### Aktywacja
 
+```mermaid
+flowchart LR
+    A[Zapisz mcp.json] --> B[Settings → MCP]
+    B --> C{Status devbeast?}
+    C -->|Zielony| D[Gotowe — użyj Agent mode]
+    C -->|Czerwony| E[dotnet build + Reload Window]
+    E --> B
+```
+
 1. Zapisz `mcp.json`
 2. Cursor → **Settings → MCP** — serwer `devbeast` powinien być zielony
 3. Jeśli nie: przeładuj okno (`Cmd+Shift+P` → Reload Window)
 
+> **Tip:** opcjonalny zrzut ekranu zielonego statusu MCP możesz dodać do `docs/assets/screenshots/cursor-mcp-green.png` — patrz [assets/README.md](assets/README.md).
+
 ## 6. Testy
 
 ```bash
-# Pełna suite (18 testów)
+# Pełna suite (19 testów)
 dotnet test
 
 # Smoke test (ręczne wywołanie wszystkich narzędzi)
@@ -254,5 +267,5 @@ Usuń `.devbeast/project-structure.json` i wywołaj ponownie z `generateIfMissin
 ## Następne kroki
 
 - [HOW_IT_WORKS.md](HOW_IT_WORKS.md) — jak agent korzysta z narzędzi
-- [TOOLS.md](TOOLS.md) — referencja wszystkich 16 narzędzi
+- [TOOLS.md](TOOLS.md) — referencja wszystkich 17 narzędzi
 - [TEMPLATE.md](TEMPLATE.md) — fork pod własny projekt MCP
