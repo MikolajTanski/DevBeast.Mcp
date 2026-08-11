@@ -29,6 +29,8 @@ appsettings.*.local.json
 *.env.local
 secrets.json
 
+!.devbeast/project-structure.json
+
 ## Scaffold / generated output
 samples/Scaffolded/
 

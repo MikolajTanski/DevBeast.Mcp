@@ -41,6 +41,7 @@ Warstwa ekspozycji MCP. Każda klasa oznaczona `[McpServerToolType]` mapuje meto
 | `DatabaseTools` | `get_database_schema`, `execute_read_query` |
 | `DiagnosticsTools` | `get_recent_errors` |
 | `ArchitectureTools` | `validate_architecture_rules` |
+| `ProjectStructureTools` | `ensure_project_structure`, `get_project_structure` |
 | `ScaffoldingTools` | `scaffold_feature_slice` |
 | `IntegrationTools` | `get_ticket_context`, `create_pull_request_with_impact` |
 | `DataTools` | `generate_test_fixtures`, `diff_environments` |

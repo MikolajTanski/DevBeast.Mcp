@@ -70,7 +70,7 @@ Projekt `tests/DevBeast.Mcp.Server.Tests`:
 - 13 testów narzędzi przez DI fixture
 - 2 testy pełnej integracji MCP (spawn serwera + `ListTools` / `CallTool`)
 
-## Narzędzia MCP (14)
+## Narzędzia MCP (16)
 
 ### Baza danych i diagnostyka
 | Narzędzie | Opis |
@@ -82,8 +82,10 @@ Projekt `tests/DevBeast.Mcp.Server.Tests`:
 ### Architektura i scaffolding
 | Narzędzie | Opis |
 |-----------|------|
+| `ensure_project_structure` | Skanuje repo lub generuje Clean Architecture + manifest `.devbeast/project-structure.json` |
+| `get_project_structure` | Zwraca zapisany manifest bez generowania plików |
 | `validate_architecture_rules` | Clean Architecture / DDD — Domain bez EF, immutable DTO |
-| `scaffold_feature_slice` | Vertical Slice: Entity, CQRS, Migration, Controller, Tests |
+| `scaffold_feature_slice` | Vertical Slice — korzysta ze struktury projektu z manifestu |
 
 ### Integracje zespołowe (Mock)
 | Narzędzie | Opis |

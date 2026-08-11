@@ -42,6 +42,7 @@ public sealed class DevBeastTestFixture : IDisposable
         Services.AddDevBeastServices();
         Services.AddSingleton<ArchitectureTools>();
         Services.AddSingleton<ScaffoldingTools>();
+        Services.AddSingleton<ProjectStructureTools>();
         Services.AddSingleton<IntegrationTools>();
         Services.AddSingleton<DataTools>();
         Services.AddSingleton<InfrastructureTools>();

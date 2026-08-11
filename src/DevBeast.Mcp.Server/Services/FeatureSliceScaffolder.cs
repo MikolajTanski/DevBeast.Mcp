@@ -11,9 +11,11 @@ public interface IFeatureSliceScaffolder
         CancellationToken cancellationToken = default);
 }
 
-public sealed class FeatureSliceScaffolder(IOptions<DevBeastOptions> options) : IFeatureSliceScaffolder
+public sealed class FeatureSliceScaffolder(
+    IOptions<DevBeastOptions> options,
+    IProjectStructureService projectStructureService) : IFeatureSliceScaffolder
 {
-    public Task<IReadOnlyList<string>> ScaffoldAsync(
+    public async Task<IReadOnlyList<string>> ScaffoldAsync(
         string featureName,
         string? projectPath = null,
         CancellationToken cancellationToken = default)
@@ -32,26 +34,32 @@ public sealed class FeatureSliceScaffolder(IOptions<DevBeastOptions> options) : 
             throw new InvalidOperationException("Output path not configured. Provide projectPath or set DevBeast:Scaffolding:OutputRoot.");
         }
 
-        var ns = options.Value.Scaffolding.NamespacePrefix;
+        var structure = await projectStructureService.EnsureStructureAsync(
+            root, generateIfMissing: true, options.Value.Scaffolding.NamespacePrefix, cancellationToken);
+
+        var ns = structure.NamespacePrefix;
         var feature = SanitizeName(featureName);
         var createdFiles = new List<string>();
 
-        var structure = new Dictionary<string, string>
+        string Layer(string layer, string suffix) =>
+            $"{ResolveLayerPath(structure, layer, ns)}/{suffix}";
+
+        var files = new Dictionary<string, string>
         {
-            [$"src/{ns}.Domain/{feature}/{feature}.cs"] = DomainEntityTemplate(ns, feature),
-            [$"src/{ns}.Application/{feature}/Commands/Create{feature}Command.cs"] = CommandTemplate(ns, feature),
-            [$"src/{ns}.Application/{feature}/Commands/Create{feature}Handler.cs"] = HandlerTemplate(ns, feature),
-            [$"src/{ns}.Application/{feature}/Queries/Get{feature}ByIdQuery.cs"] = QueryTemplate(ns, feature),
-            [$"src/{ns}.Application/{feature}/Queries/Get{feature}ByIdHandler.cs"] = QueryHandlerTemplate(ns, feature),
-            [$"src/{ns}.Application/{feature}/Dtos/{feature}Dto.cs"] = DtoTemplate(ns, feature),
-            [$"src/{ns}.Application/{feature}/Mapping/{feature}Profile.cs"] = MapperTemplate(ns, feature),
-            [$"src/{ns}.Infrastructure/Persistence/Configurations/{feature}Configuration.cs"] = EfConfigTemplate(ns, feature),
-            [$"src/{ns}.Infrastructure/Persistence/Migrations/Add{feature}Migration.cs"] = MigrationTemplate(ns, feature),
-            [$"src/{ns}.Api/Controllers/{feature}Controller.cs"] = ControllerTemplate(ns, feature),
-            [$"tests/{ns}.Application.Tests/{feature}/Create{feature}HandlerTests.cs"] = TestTemplate(ns, feature)
+            [Layer("Domain", $"{feature}/{feature}.cs")] = DomainEntityTemplate(ns, feature),
+            [Layer("Application", $"{feature}/Commands/Create{feature}Command.cs")] = CommandTemplate(ns, feature),
+            [Layer("Application", $"{feature}/Commands/Create{feature}Handler.cs")] = HandlerTemplate(ns, feature),
+            [Layer("Application", $"{feature}/Queries/Get{feature}ByIdQuery.cs")] = QueryTemplate(ns, feature),
+            [Layer("Application", $"{feature}/Queries/Get{feature}ByIdHandler.cs")] = QueryHandlerTemplate(ns, feature),
+            [Layer("Application", $"{feature}/Dtos/{feature}Dto.cs")] = DtoTemplate(ns, feature),
+            [Layer("Application", $"{feature}/Mapping/{feature}Profile.cs")] = MapperTemplate(ns, feature),
+            [Layer("Infrastructure", $"Persistence/Configurations/{feature}Configuration.cs")] = EfConfigTemplate(ns, feature),
+            [Layer("Infrastructure", $"Persistence/Migrations/Add{feature}Migration.cs")] = MigrationTemplate(ns, feature),
+            [Layer("Api", $"Controllers/{feature}Controller.cs")] = ControllerTemplate(ns, feature),
+            [$"{ResolveLayerPath(structure, "Tests", ns)}/{feature}/Create{feature}HandlerTests.cs"] = TestTemplate(ns, feature)
         };
 
-        foreach (var (relativePath, content) in structure)
+        foreach (var (relativePath, content) in files)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var fullPath = Path.Combine(root, relativePath);
@@ -59,13 +67,21 @@ public sealed class FeatureSliceScaffolder(IOptions<DevBeastOptions> options) : 
 
             if (!File.Exists(fullPath))
             {
-                File.WriteAllText(fullPath, content);
+                await File.WriteAllTextAsync(fullPath, content, cancellationToken);
                 createdFiles.Add(fullPath);
             }
         }
 
-        return Task.FromResult<IReadOnlyList<string>>(createdFiles);
+        return createdFiles;
     }
+
+    private static string ResolveLayerPath(Models.ProjectStructureResult structure, string layer, string ns) =>
+        ProjectStructureService.GetLayerPath(structure, layer)
+        ?? layer switch
+        {
+            "Tests" => $"tests/{ns}.Application.Tests",
+            _ => $"src/{ns}.{layer}"
+        };
 
     private static string SanitizeName(string name) =>
         string.Concat(name.Where(char.IsLetterOrDigit));

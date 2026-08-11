@@ -26,7 +26,9 @@ public sealed class McpStdioIntegrationTests(DevBeastTestFixture fixture)
         Assert.Contains(tools, t => t.Name == "peek_dead_letter_queue");
         Assert.Contains(tools, t => t.Name == "scan_secrets_and_pii");
         Assert.Contains(tools, t => t.Name == "check_nuget_vulnerabilities");
-        Assert.True(tools.Count >= 14);
+        Assert.Contains(tools, t => t.Name == "ensure_project_structure");
+        Assert.Contains(tools, t => t.Name == "get_project_structure");
+        Assert.True(tools.Count >= 16);
     }
 
     [Fact]

@@ -211,5 +211,68 @@ public sealed class ScaffoldingToolsTests(DevBeastTestFixture fixture)
     }
 }
 
+[Collection("DevBeast")]
+public sealed class ProjectStructureToolsTests(DevBeastTestFixture fixture)
+{
+    [Fact]
+    public async Task EnsureProjectStructure_CompletesPartialReferenceApp()
+    {
+        var tools = fixture.GetTool<Server.Tools.ProjectStructureTools>();
+        var json = await tools.EnsureProjectStructure(fixture.ReferenceAppPath, generateIfMissing: true);
+        using var doc = DevBeastTestFixture.ParseJson(json);
+
+        Assert.True(doc.RootElement.GetProperty("hasManifest").GetBoolean());
+        Assert.True(doc.RootElement.GetProperty("layers").GetArrayLength() >= 4);
+        Assert.True(File.Exists(Path.Combine(fixture.ReferenceAppPath, ".devbeast", "project-structure.json")));
+    }
+
+    [Fact]
+    public async Task EnsureProjectStructure_GeneratesSkeletonWhenMissing()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"devbeast-structure-{Guid.NewGuid():N}");
+        try
+        {
+            var tools = fixture.GetTool<Server.Tools.ProjectStructureTools>();
+            var json = await tools.EnsureProjectStructure(tempRoot, generateIfMissing: true, namespacePrefix: "Demo");
+            using var doc = DevBeastTestFixture.ParseJson(json);
+
+            Assert.True(doc.RootElement.GetProperty("wasGenerated").GetBoolean());
+            Assert.True(File.Exists(Path.Combine(tempRoot, ".devbeast", "project-structure.json")));
+            Assert.True(doc.RootElement.GetProperty("layers").GetArrayLength() >= 4);
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task GetProjectStructure_ReturnsManifestAfterEnsure()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"devbeast-get-structure-{Guid.NewGuid():N}");
+        try
+        {
+            var tools = fixture.GetTool<Server.Tools.ProjectStructureTools>();
+            await tools.EnsureProjectStructure(tempRoot, generateIfMissing: true, namespacePrefix: "Shop");
+
+            var json = await tools.GetProjectStructure(tempRoot);
+            using var doc = DevBeastTestFixture.ParseJson(json);
+
+            Assert.True(doc.RootElement.GetProperty("hasManifest").GetBoolean());
+            Assert.Equal("Shop", doc.RootElement.GetProperty("namespacePrefix").GetString());
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+}
+
 [CollectionDefinition("DevBeast")]
 public class DevBeastCollectionDefinition : ICollectionFixture<DevBeastTestFixture>;

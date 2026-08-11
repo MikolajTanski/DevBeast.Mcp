@@ -21,6 +21,7 @@ public static class ServiceRegistration
         services.AddSingleton<MongoDatabaseService>();
         services.AddSingleton<ILogService, FileLogService>();
         services.AddSingleton<IArchitectureValidationService, ArchitectureValidationService>();
+        services.AddSingleton<IProjectStructureService, ProjectStructureService>();
         services.AddSingleton<IFeatureSliceScaffolder, FeatureSliceScaffolder>();
         services.AddSingleton<ITicketService, MockTicketService>();
         services.AddSingleton<IPullRequestService, MockPullRequestService>();

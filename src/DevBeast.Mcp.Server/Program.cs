@@ -26,6 +26,7 @@ builder.Services
     .WithTools<DiagnosticsTools>()
     .WithTools<ArchitectureTools>()
     .WithTools<ScaffoldingTools>()
+    .WithTools<ProjectStructureTools>()
     .WithTools<IntegrationTools>()
     .WithTools<DataTools>()
     .WithTools<InfrastructureTools>()
