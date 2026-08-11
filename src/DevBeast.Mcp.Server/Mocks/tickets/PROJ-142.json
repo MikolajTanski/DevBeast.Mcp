@@ -1,0 +1,20 @@
+{
+  "id": "PROJ-142",
+  "source": "MockJira",
+  "type": "Bug",
+  "title": "NullReferenceException w OrderService.ProcessAsync przy pustym koszyku",
+  "description": "Po kliknięciu 'Złóż zamówienie' z pustym koszykiem aplikacja zwraca 500.\n\nStack trace w logach:\nSystem.NullReferenceException at OrderService.ProcessAsync line 87\n\nOczekiwane: HTTP 400 z komunikatem walidacyjnym.",
+  "priority": "High",
+  "status": "In Progress",
+  "assignee": "mikolaj.tanski@company.com",
+  "labels": ["backend", "orders", "null-ref"],
+  "acceptanceCriteria": [
+    "Pusty koszyk zwraca 400 Bad Request",
+    "Brak NullReferenceException w logach",
+    "Dodany test jednostkowy OrderServiceTests.ProcessAsync_EmptyCart_ReturnsValidationError"
+  ],
+  "linkedFiles": [
+    "src/OrderService/Application/Orders/ProcessOrderHandler.cs",
+    "src/OrderService/Domain/Orders/Order.cs"
+  ]
+}

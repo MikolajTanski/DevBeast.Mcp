@@ -1,0 +1,18 @@
+{
+  "DevBeast": {
+    "DefaultProjectPath": "/Users/mikolajtanski/RiderProjects/DevBeast.Mcp/samples/ReferenceApp",
+    "Database": {
+      "Provider": "MongoDB"
+    },
+    "Mongo": {
+      "ConnectionString": "mongodb://devbeast_app:devbeast_app@localhost:27018/devbeast?authSource=devbeast",
+      "DatabaseName": "devbeast"
+    },
+    "Logs": {
+      "Directory": "/tmp/devbeast-logs"
+    },
+    "Scaffolding": {
+      "OutputRoot": "/Users/mikolajtanski/RiderProjects/DevBeast.Mcp/samples/Scaffolded"
+    }
+  }
+}

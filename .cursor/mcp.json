@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "devbeast": {
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "${workspaceFolder}/src/DevBeast.Mcp.Server/DevBeast.Mcp.Server.csproj"
+      ],
+      "env": {
+        "DEVBEAST__Mongo__ConnectionString": "mongodb://devbeast_app:devbeast_app@localhost:27018/devbeast?authSource=devbeast",
+        "DEVBEAST__Mongo__DatabaseName": "devbeast",
+        "DEVBEAST__Database__Provider": "MongoDB",
+        "DEVBEAST__Redis__ConnectionString": "localhost:6379",
+        "DEVBEAST__DefaultProjectPath": "${workspaceFolder}/samples/ReferenceApp",
+        "DEVBEAST__Scaffolding__OutputRoot": "${workspaceFolder}/samples/Scaffolded"
+      }
+    }
+  }
+}

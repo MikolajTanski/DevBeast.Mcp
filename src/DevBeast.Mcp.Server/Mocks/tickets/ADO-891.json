@@ -1,0 +1,18 @@
+{
+  "id": "ADO-891",
+  "source": "MockAzureDevOps",
+  "type": "User Story",
+  "title": "Dodać endpoint GET /api/products z filtrowaniem po kategorii",
+  "description": "Jako klient API chcę filtrować produkty po kategorii, aby szybciej wyszukiwać towary.\n\nQuery param: category (string, optional)\nResponse: paginated list ProductDto[]",
+  "priority": "Medium",
+  "status": "To Do",
+  "assignee": "mikolaj.tanski@company.com",
+  "labels": ["api", "products", "vertical-slice"],
+  "acceptanceCriteria": [
+    "Endpoint zwraca 200 z listą produktów",
+    "Filtr category działa poprawnie",
+    "CQRS Query + Handler w warstwie Application",
+    "Test integracyjny ProductsControllerTests"
+  ],
+  "suggestedFeatureName": "GetProductsByCategory"
+}

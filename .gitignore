@@ -1,0 +1,20 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.idea/
+
+## Config with secrets
+appsettings.Local.json
+appsettings.Development.json
+
+## Scaffold output
+samples/Scaffolded/
+
+## OS
+.DS_Store
+Thumbs.db
