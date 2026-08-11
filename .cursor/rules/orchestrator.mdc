@@ -1,8 +1,6 @@
 ---
-description: Orkiestrator zespołu agentów Architect → Coder → Tester
 alwaysApply: true
 ---
-
 # Orkiestrator DevBeast
 
 Pełna instrukcja: [AGENTS.md](../../AGENTS.md)
