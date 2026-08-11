@@ -167,6 +167,19 @@ builder.Services
 - **stdout** — wyłącznie JSON-RPC MCP
 - **stderr** — logi serwera (`LogToStandardErrorThreshold = Trace`)
 
+### Licznik wywołań narzędzi
+
+Filtr `AddCallToolFilter` (`WithToolCallMetrics`) rejestruje każde `tools/call`:
+
+```
+Client tools/call → CallToolFilter → [ToolCallMetrics] → handler narzędzia
+```
+
+- In-memory, thread-safe (`ConcurrentDictionary` + `Interlocked`)
+- Reset przy restarcie procesu MCP (Cursor spawnuje nowy proces per sesja)
+- Podgląd: narzędzie `get_tool_call_stats`
+- Config: `DevBeast:Metrics:Enabled`, `DevBeast:Metrics:LogEachCall`
+
 ## Manifest projektu
 
 `.devbeast/project-structure.json` w repo docelowym:

@@ -31,6 +31,7 @@ public static class ServiceRegistration
         services.AddSingleton<IDeadLetterQueueService, MockDeadLetterQueueService>();
         services.AddSingleton<ISecretsScanner, SecretsScanner>();
         services.AddSingleton<INuGetVulnerabilityChecker, NuGetVulnerabilityChecker>();
+        services.AddSingleton<IToolCallMetrics, ToolCallMetrics>();
 
         return services;
     }

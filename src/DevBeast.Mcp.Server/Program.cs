@@ -22,8 +22,10 @@ builder.Services.AddDevBeastServices();
 builder.Services
     .AddMcpServer()
     .WithStdioServerTransport()
+    .WithToolCallMetrics()
     .WithTools<DatabaseTools>()
     .WithTools<DiagnosticsTools>()
+    .WithTools<MetricsTools>()
     .WithTools<ArchitectureTools>()
     .WithTools<ScaffoldingTools>()
     .WithTools<ProjectStructureTools>()

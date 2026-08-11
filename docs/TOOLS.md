@@ -1,6 +1,6 @@
 # Referencja narzędzi MCP
 
-DevBeast wystawia **16 narzędzi** pogrupowanych w 6 modułów. Wszystkie zwracają JSON.
+DevBeast wystawia **17 narzędzi** pogrupowanych w 7 modułów. Wszystkie zwracają JSON.
 
 ## Spis
 
@@ -65,6 +65,20 @@ Agreguje wyjątki z plików logów w oknie czasowym.
 **Obsługiwane formaty logów:** Serilog JSON (`@l`, `@m`, `@t`), Serilog text, plain text z `Exception`.
 
 **Wynik:** lista zagregowanych błędów z `occurrenceCount`, `stackTrace`, `firstSeen`, `lastSeen`.
+
+---
+
+### `get_tool_call_stats`
+
+Licznik wywołań narzędzi MCP w bieżącej sesji serwera (od startu procesu).
+
+| Parametr | Typ | Wymagany | Domyślnie | Opis |
+|----------|-----|----------|-----------|------|
+| `reset` | bool | nie | `false` | Po zwróceniu statystyk zeruje liczniki |
+
+**Wynik:** `sessionStartedAt`, `totalCalls`, `totalErrors`, `tools[]` z `calls`, `errors`, `avgDurationMs` per narzędzie.
+
+**Mechanizm:** filtr `AddCallToolFilter` w pipeline MCP — thread-safe, in-memory. Logi per-call opcjonalnie przez `DevBeast:Metrics:LogEachCall`.
 
 ---
 

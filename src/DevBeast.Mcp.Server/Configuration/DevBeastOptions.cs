@@ -11,6 +11,17 @@ public sealed class DevBeastOptions
     public RedisOptions Redis { get; set; } = new();
     public IntegrationsOptions Integrations { get; set; } = new();
     public ScaffoldingOptions Scaffolding { get; set; } = new();
+    public MetricsOptions Metrics { get; set; } = new();
+}
+
+public sealed class MetricsOptions
+{
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    /// Log each tool call to stderr (visible in Cursor MCP logs).
+    /// </summary>
+    public bool LogEachCall { get; set; }
 }
 
 public sealed class DatabaseOptions

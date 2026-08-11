@@ -28,7 +28,8 @@ public sealed class McpStdioIntegrationTests(DevBeastTestFixture fixture)
         Assert.Contains(tools, t => t.Name == "check_nuget_vulnerabilities");
         Assert.Contains(tools, t => t.Name == "ensure_project_structure");
         Assert.Contains(tools, t => t.Name == "get_project_structure");
-        Assert.True(tools.Count >= 16);
+        Assert.Contains(tools, t => t.Name == "get_tool_call_stats");
+        Assert.True(tools.Count >= 17);
     }
 
     [Fact]
@@ -43,6 +44,22 @@ public sealed class McpStdioIntegrationTests(DevBeastTestFixture fixture)
         var text = result.Content.OfType<TextContentBlock>().First().Text;
         Assert.Contains("ADO-891", text);
         Assert.Contains("suggestedFeatureName", text);
+    }
+
+    [Fact]
+    public async Task McpServer_ToolCallMetrics_RecordsInvocations()
+    {
+        await using var client = await ConnectAsync();
+
+        await client.CallToolAsync(
+            "get_ticket_context",
+            new Dictionary<string, object?> { ["ticketId"] = "ADO-891" });
+
+        var statsResult = await client.CallToolAsync("get_tool_call_stats", null);
+        var text = statsResult.Content.OfType<TextContentBlock>().First().Text;
+
+        Assert.Contains("get_ticket_context", text);
+        Assert.Contains("totalCalls", text);
     }
 
     private async Task<McpClient> ConnectAsync()
