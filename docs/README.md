@@ -9,3 +9,4 @@
 | 3 | [ARCHITECTURE.md](ARCHITECTURE.md) | Warstwy serwera, modele, serwisy, rozszerzalność |
 | 4 | [TOOLS.md](TOOLS.md) | Referencja 16 narzędzi MCP z parametrami |
 | 5 | [TEMPLATE.md](TEMPLATE.md) | Użycie repo jako starter kit |
+| — | [AGENTS.md](../AGENTS.md) | Orkiestrator + zespół agentów (`.agents/`) |

@@ -1,0 +1,13 @@
+---
+description: Orkiestrator zespołu agentów Architect → Coder → Tester
+alwaysApply: true
+---
+
+# Orkiestrator DevBeast
+
+Pełna instrukcja: [AGENTS.md](../../AGENTS.md)
+
+Role zespołu: `.agents/architect.md`, `.agents/coder.md`, `.agents/tester.md`
+
+Dla feature/bug/refaktor uruchamiaj pipeline przez Task subagentów (Architect → Coder → Tester).
+Specyfikacje zapisuj w `.agents/specs/`. Ty koordynujesz, raportujesz użytkownikowi po polsku.
